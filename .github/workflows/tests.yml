@@ -16,6 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    # Declared at job level so steps can branch on whether it is set. A fork,
+    # or a clone without the secret configured, still gets full E2E coverage
+    # rather than a red build it cannot fix.
+    env:
+      PRODUCT_HUNT_TOKEN: ${{ secrets.PRODUCT_HUNT_TOKEN }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -39,14 +45,18 @@ jobs:
         run: bun x playwright install --with-deps chromium
 
       - name: API tests
+        if: env.PRODUCT_HUNT_TOKEN != ''
         run: bun run test:api
-        env:
-          PRODUCT_HUNT_TOKEN: ${{ secrets.PRODUCT_HUNT_TOKEN }}
+
+      - name: API tests skipped — no token configured
+        if: env.PRODUCT_HUNT_TOKEN == ''
+        run: |
+          echo "::warning title=API suite skipped::PRODUCT_HUNT_TOKEN is not set, so the API tests did not run."
+          echo "Add a repository secret named PRODUCT_HUNT_TOKEN to enable them."
+          echo "Settings -> Secrets and variables -> Actions -> New repository secret"
 
       - name: E2E tests
         run: bun run test:e2e
-        env:
-          PRODUCT_HUNT_TOKEN: ${{ secrets.PRODUCT_HUNT_TOKEN }}
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4

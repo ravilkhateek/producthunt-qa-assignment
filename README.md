@@ -78,9 +78,12 @@ The nightly schedule is the important one. The system under test is a
 third-party production site that changes without warning, so most breakages
 will arrive on a day nobody touched this repository.
 
-To run it on a fork, add a repository secret named `PRODUCT_HUNT_TOKEN`
-(*Settings → Secrets and variables → Actions*). The E2E suite does not need it;
-the API suite does.
+The API suite needs a token; the E2E suite does not. Rather than fail a build
+that a cloner cannot fix, the API step is skipped with a visible warning when
+`PRODUCT_HUNT_TOKEN` is absent, and E2E still runs in full.
+
+To enable the API suite in CI, add a repository secret named
+`PRODUCT_HUNT_TOKEN` under *Settings → Secrets and variables → Actions*.
 
 ## Summary of findings
 
