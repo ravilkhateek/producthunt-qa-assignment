@@ -67,6 +67,21 @@ bun run explore:web  # HTTP statuses, redirects, security headers
 bun run cost         # measures rate limit cost by query size
 ```
 
+## Continuous integration
+
+[`.github/workflows/tests.yml`](.github/workflows/tests.yml) runs typecheck,
+the API suite and the E2E suite on every push and pull request, and nightly at
+07:00 UTC. The Playwright HTML report is uploaded as an artifact on every run,
+passing or failing.
+
+The nightly schedule is the important one. The system under test is a
+third-party production site that changes without warning, so most breakages
+will arrive on a day nobody touched this repository.
+
+To run it on a fork, add a repository secret named `PRODUCT_HUNT_TOKEN`
+(*Settings → Secrets and variables → Actions*). The E2E suite does not need it;
+the API suite does.
+
 ## Summary of findings
 
 Full detail in [`docs/findings.md`](docs/findings.md).
