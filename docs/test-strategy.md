@@ -57,6 +57,11 @@ follow (detail in `findings.md`):
 - **Bot protection is uneven (F-12).** Deep links to `/products/<slug>` get a
   Cloudflare challenge; the same page reached by clicking does not. Parallel
   workers worsen it. Hence one worker, navigating as a user does.
+- **Datacenter IPs are hard-blocked (F-14).** GitHub-hosted runners receive a
+  flat HTTP 403, not a challenge. Browser E2E coverage therefore cannot run
+  from cloud CI at all without a self-hosted runner, a residential-egress
+  proxy, or a vendor allowlist. Discovered only by running the pipeline —
+  local green says nothing about whether CI can reach the site.
 - **Data changes daily.** Every assertion targets structure and invariants,
   never values.
 

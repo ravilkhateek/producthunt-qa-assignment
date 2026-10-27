@@ -400,6 +400,55 @@ Three distinct states, one label.
 
 ---
 
+## F-14 — Datacenter egress IPs are hard-blocked with HTTP 403, not challenged
+
+| | |
+|---|---|
+| **Severity** | Low (Informational for the platform; blocking for CI) |
+| **Area** | Web — edge / bot protection |
+| **Status** | Confirmed, reproduced in GitHub Actions |
+
+**Observed** — The E2E suite passes locally and fails in GitHub Actions. The
+failure is not a timeout, a selector change or a challenge page:
+
+```
+[chromium] › homepage › renders today's launch feed
+  Error: expect(received).toBe(expected)
+  Expected: 200
+  Received: 403
+```
+
+A plain `GET /` from a GitHub-hosted `ubuntu-latest` runner returns **HTTP 403**.
+Not the interstitial described in F-12 — a hard refusal, with no challenge to
+solve and no path through.
+
+**Why it matters**
+
+*For testing*: browser-based E2E coverage of this product cannot run from
+cloud CI at all. This is the single hardest constraint discovered, and it is
+invisible until the first pipeline run — local green tells you nothing about
+whether CI can reach the site. The repository's workflow therefore gates the
+E2E job behind a `RUN_E2E` variable, with an explicit warning when skipped,
+rather than carrying a permanently red build that reflects nothing about code
+quality.
+
+Resolving it properly needs one of: a self-hosted runner on non-datacenter
+egress, a residential-egress proxy, or an allowlist arrangement with the
+vendor. In a real engagement the third is the correct conversation to have;
+the first is what most teams end up doing.
+
+*For the platform*: this is defensible — datacenter traffic is overwhelmingly
+automated. Worth noting only that a `403` with no challenge gives a legitimate
+integrator no self-service route, where the F-12 interstitial at least implies
+one exists.
+
+**Contrast with F-12** — Three distinct behaviours now measured at the same
+edge: in-app navigation passes, deep links from a residential IP get a
+solvable challenge, and datacenter IPs get a flat 403. The protection is
+layered by both route and network origin.
+
+---
+
 ## Template for new findings
 
 ```

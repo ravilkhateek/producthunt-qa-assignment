@@ -3,7 +3,7 @@
 Test strategy, exploratory findings and automated coverage for
 [Product Hunt](https://www.producthunt.com) and its public GraphQL API.
 
-**16 automated tests** (8 API, 8 E2E) and **13 documented findings**, all
+**16 automated tests** (8 API, 8 E2E) and **14 documented findings**, all
 reproducible from the scripts in this repository.
 
 | Document | Contents |
@@ -78,12 +78,27 @@ The nightly schedule is the important one. The system under test is a
 third-party production site that changes without warning, so most breakages
 will arrive on a day nobody touched this repository.
 
-The API suite needs a token; the E2E suite does not. Rather than fail a build
-that a cloner cannot fix, the API step is skipped with a visible warning when
-`PRODUCT_HUNT_TOKEN` is absent, and E2E still runs in full.
+Both suites are gated, and both gates are deliberate:
 
-To enable the API suite in CI, add a repository secret named
-`PRODUCT_HUNT_TOKEN` under *Settings → Secrets and variables → Actions*.
+| Suite | Runs when | Why |
+|---|---|---|
+| Typecheck | always | No external dependency |
+| API | `PRODUCT_HUNT_TOKEN` secret is set | A cloner without a token cannot fix a red build |
+| E2E | `RUN_E2E` variable is `true` | **Product Hunt returns HTTP 403 to GitHub-hosted runners** |
+
+**The E2E gate is the interesting one.** Pushing this workflow is how finding
+**F-14** was discovered: the suite passes locally and fails in Actions with a
+flat `403` on the homepage — not the bot challenge of F-12, a hard block on
+datacenter egress IPs. Running it by default would leave a permanently red
+build that says nothing about the code.
+
+Fixing it properly needs a self-hosted runner on non-datacenter egress, a
+residential-egress proxy, or an allowlist arrangement with the vendor. Until
+then the step is skipped with a visible warning rather than hidden.
+
+To enable either suite: add the `PRODUCT_HUNT_TOKEN` secret, or set the
+`RUN_E2E` variable to `true`, under *Settings → Secrets and variables →
+Actions*.
 
 ## Summary of findings
 
@@ -104,6 +119,7 @@ Full detail in [`docs/findings.md`](docs/findings.md).
 | F-11 | Low | Homepage ships 1,091,244 bytes of HTML before any assets |
 | F-12 | Low | Bot protection challenges deep links but not in-app navigation |
 | F-13 | Low | Search results page has no `<h1>` and reuses the generic title |
+| F-14 | Low | Datacenter egress IPs hard-blocked with 403, not challenged — blocks cloud CI |
 
 **The three worth leading with:**
 
